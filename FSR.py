@@ -47,6 +47,7 @@ class Rat:
         self.speedx = 0
         self.speedy = 0
         self.maxspeed = 12
+        self.tempmaxspeed = self.maxspeed
         self.radius = 5
         self.poison = 0
         self.maxpoison = 3*FPS
@@ -82,8 +83,8 @@ class Rat:
         pygame.draw.rect(screen, RED, (x+border, y+border, missingwidth, height-border*2))
     
     def update(self, m):
-        if self.getspeed() >= self.maxspeed:
-            self.setspeed(self.maxspeed)
+        if self.getspeed() >= self.tempmaxspeed:
+            self.setspeed(self.tempmaxspeed)
         xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
         ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
         if any(tile.solid for tile in m.gettilecollisions(self.x+xmovement, self.y+ymovement, self.radius)):
@@ -96,8 +97,11 @@ class Rat:
         self.x += xmovement
         self.y += ymovement
 
+        self.tempmaxspeed = self.maxspeed
+        
         if self.poison > 0:
             self.poison -= 1
+            self.tempmaxspeed = self.maxspeed * (2-(self.poison/self.maxpoison))/3
             
         for tile in m.gettilecollisions(self.x, self.y, self.radius):
             if tile.style == "Sewer":
