@@ -126,13 +126,20 @@ class Map:
     def __init__(self, sizex, sizey):
         self.sizex = sizex
         self.sizey = sizey
-        self.tiles = [[Tile("Void", True, False) for y in range(sizey)] for x in range(sizex)]
         self.items = {}
+        self.generate()
 
     def additem(self, item, x, y):
         self.items[item] = (x, y)
 
-    def corridor(self, x, y, dirx, diry, length, radius, water_radius):
+    def draw(self, camerax, cameray):
+        for x in range(self.sizex):
+            for y in range(self.sizey):
+                self.tiles[x][y].draw(x*BLOCKPIXELS, y*BLOCKPIXELS, camerax, cameray)
+        for item, pos in self.items.items():
+            item.draw(pos[0], pos[1], camerax, cameray)
+            
+    def gencorridor(self, x, y, dirx, diry, length, radius, water_radius):
         for i in range(length+2*radius+1):
             relx = x + dirx*(i-radius)
             rely = y + diry*(i-radius)
@@ -146,18 +153,35 @@ class Map:
                 else:
                     tile1 = Tile("Wall", True, False, 1)
                     tile2 = Tile("Wall", True, False, 1)
-                if tile1.priority >= self.tiles[relx+diry*j][rely+dirx*j].priority:
-                    self.tiles[relx+diry*j][rely+dirx*j] = tile1
-                if tile2.priority >= self.tiles[relx-diry*j][rely-dirx*j].priority:
-                    self.tiles[relx-diry*j][rely-dirx*j] = tile2
+                self.placetile(tile1, relx+diry*j, rely+dirx*j)
+                self.placetile(tile2, relx-diry*j, rely-dirx*j)
 
-    def draw(self, camerax, cameray):
-        for x in range(self.sizex):
-            for y in range(self.sizey):
-                self.tiles[x][y].draw(x*BLOCKPIXELS, y*BLOCKPIXELS, camerax, cameray)
-        for item, pos in self.items.items():
-            item.draw(pos[0], pos[1], camerax, cameray)
-            
+    def generate(self):
+        self.tiles = [[Tile("Void", True, False) for y in range(self.sizey)] for x in range(self.sizex)]
+        if self.sizex >= self.sizey:
+            variance = self.sizex//10
+            midx = self.sizex//2
+            startx = random.randint(midx-variance, midx+variance)
+            starty = 0
+            dx = 0
+            dy = 1
+            length = self.sizex
+            self.spawnx = startx*BLOCKPIXELS
+            self.spawny = 100
+        else:
+            variance = self.sizey//10
+            midy = self.sizey//2
+            startx = 0
+            starty = random.randint(midy-variance, midy+variance)
+            dx = 1
+            dy = 0
+            length = self.sizey
+            self.spawnx = 100
+            self.spawny = starty*BLOCKPIXELS
+        mainsewer = 8
+        maincorridor = 12
+        self.gencorridor(startx, starty, dx, dy, length, maincorridor, mainsewer)
+        
 
     def gettilecollisions(self, x, y, radius):
         collisions = []
@@ -172,6 +196,11 @@ class Map:
             if ((x-pos[0])**2+(y-pos[1])**2)**0.5 < radius + item.radius:
                 collisions.append(item)
         return collisions
+
+    def placetile(self, tile, x, y):
+        if x>=0 and x<self.sizex and y>=0 and y<self.sizey:
+            if tile.priority >= self.tiles[x][y].priority:
+                self.tiles[x][y] = tile
 
     def update(self):
         self.items = {item: pos for item, pos in self.items.items() if item.active}
@@ -201,11 +230,8 @@ class Item:
     def draw(self, x, y, camerax, cameray):
         pygame.draw.rect(screen, ITEM_COLORS[self.style], (x-camerax-self.radius//2, y-cameray-self.radius//2, self.radius, self.radius))
 
-r = Rat(100, 50)
-m = Map(30, 30)
-m.corridor(5, 20, 0, -1, 15, 5, 2)
-m.corridor(5, 5, 1, 0, 12, 5, 2)
-m.corridor(17, 5, 0, 1, 6, 5, 2)
+m = Map(40, 70)
+r = Rat(m.spawnx, m.spawny)
 a = Item("Apple", 3)
 m.additem(a, 250, 350)
 
