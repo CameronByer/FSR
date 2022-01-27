@@ -23,10 +23,6 @@ TILE_COLORS = {
     "Wall": STONEWALL
 }
 
-ITEM_COLORS = {
-    "Apple": RED
-}
-
 POISON = 10 #DMG/SEC
 
 BLOCKPIXELS = 32
@@ -36,6 +32,9 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("FSR")
 clock = pygame.time.Clock() ## For syncing the FPS
+
+ITEM_LIST = ["Apple"]
+ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
 
 class Rat:
 
@@ -48,7 +47,7 @@ class Rat:
         self.speedy = 0
         self.maxspeed = 12
         self.tempmaxspeed = self.maxspeed
-        self.radius = 5
+        self.radius = 8
         self.poison = 0
         self.maxpoison = 3*FPS
 
@@ -226,14 +225,16 @@ class Item:
         self.style = style
         self.radius = radius
         self.active = True
+        self.image = pygame.transform.scale(ITEM_BANK[style], (radius*2, radius*2))
+        self.image.set_colorkey(WHITE)
 
     def draw(self, x, y, camerax, cameray):
-        pygame.draw.rect(screen, ITEM_COLORS[self.style], (x-camerax-self.radius//2, y-cameray-self.radius//2, self.radius, self.radius))
+        screen.blit(self.image, (x-camerax-self.radius, y-cameray-self.radius))
 
 m = Map(40, 70)
 r = Rat(m.spawnx, m.spawny)
-a = Item("Apple", 3)
-m.additem(a, 250, 350)
+a = Item("Apple", 7)
+m.additem(a, m.spawnx+100, m.spawny)
 
 running = True
 while running:
