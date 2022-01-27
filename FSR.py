@@ -158,6 +158,8 @@ class Map:
 
     def generate(self):
         self.tiles = [[Tile("Void", True, False) for y in range(self.sizey)] for x in range(self.sizex)]
+        mainsewer = 8
+        maincorridor = 12
         if self.sizex >= self.sizey:
             variance = self.sizex//10
             midx = self.sizex//2
@@ -166,7 +168,7 @@ class Map:
             dx = 0
             dy = 1
             length = self.sizex
-            self.spawnx = startx*BLOCKPIXELS
+            self.spawnx = (startx-(maincorridor+mainsewer)/2+1)*BLOCKPIXELS
             self.spawny = 100
         else:
             variance = self.sizey//10
@@ -177,9 +179,7 @@ class Map:
             dy = 0
             length = self.sizey
             self.spawnx = 100
-            self.spawny = starty*BLOCKPIXELS
-        mainsewer = 8
-        maincorridor = 12
+            self.spawny = (starty-(maincorridor+mainsewer)/2+1)*BLOCKPIXELS
         self.gencorridor(startx, starty, dx, dy, length, maincorridor, mainsewer)
         
 
