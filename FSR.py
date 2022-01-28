@@ -36,6 +36,9 @@ clock = pygame.time.Clock() ## For syncing the FPS
 ITEM_LIST = ["Apple"]
 ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
 
+TILE_LIST = ["Stone"]
+TILE_BANK = {tile : pygame.image.load("Tiles\\"+tile+".jpg").convert_alpha() for tile in TILE_LIST}
+
 class Rat:
 
     def __init__(self, x, y):
@@ -48,6 +51,7 @@ class Rat:
         self.maxspeed = 12
         self.tempmaxspeed = self.maxspeed
         self.radius = 8
+        self.inventory = [None]*5
         self.poison = 0
         self.maxpoison = 3*FPS
 
@@ -61,8 +65,11 @@ class Rat:
             self.speedy *= speed/curspeed
 
     def pickup(self, item):
-        item.active = False
-        self.health += 25
+        for slot in range(5):
+            if self.inventory[slot] == None:
+                self.inventory[slot] = item
+                return True
+        return False
 
     def distancetopoint(self, x, y):
         return ((self.x-x)**2+(self.y-y)**2)**0.5
@@ -80,8 +87,17 @@ class Rat:
         percentmissing = (self.maxhealth-self.health)/self.maxhealth
         missingwidth = percentmissing * (width-2*border)
         pygame.draw.rect(screen, RED, (x+border, y+border, missingwidth, height-border*2))
+
+    def drawinventory(self, slotsize = 40, spacing = 10, border = 2):
+        for i in range(5):
+            pygame.draw.rect(screen, BLACK, (spacing+(slotsize+spacing)*i, HEIGHT-slotsize-spacing, slotsize, slotsize))
+            pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
+            if self.inventory[i] != None:
+                self.inventory[i].draw(spacing+(slotsize+spacing)*i+slotsize/2, HEIGHT-slotsize-spacing+slotsize/2, 0, 0, slotsize-4*border, slotsize-4*border)
+                
     
     def update(self, m):
+        
         if self.getspeed() >= self.tempmaxspeed:
             self.setspeed(self.tempmaxspeed)
         xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
@@ -107,15 +123,18 @@ class Rat:
                 self.poison = self.maxpoison
 
         for item in m.getitemcollisions(self.x, self.y, self.radius):
-            self.health += 25
-            item.active = False
+            if self.pickup(item):
+                item.active = False
 
         if self.poison > 0:
             self.health -= POISON/FPS
 
         if self.health <=0:
-            print("DEATH")
             self.health = self.maxhealth
+            self.poison = 0
+            self.inventory = [None]*5
+            self.x = m.spawnx
+            self.y = m.spawny
         elif self.health > self.maxhealth:
             self.health = self.maxhealth
             
@@ -212,12 +231,18 @@ class Tile:
         self.solid = solid
         self.water = water
         self.priority = priority
+        self.image = None
+        if style in TILE_LIST:
+            self.image = pygame.transform.scale(TILE_BANK[style], (BLOCKPIXELS, BLOCKPIXELS))
     
     def additem(self, item, x, y):
         self.items[item] = (x, y)
 
     def draw(self, x, y, camerax, cameray):
-        pygame.draw.rect(screen, TILE_COLORS[self.style], (x-camerax, y-cameray, BLOCKPIXELS, BLOCKPIXELS))
+        if self.image == None:
+            pygame.draw.rect(screen, TILE_COLORS[self.style], (x-camerax, y-cameray, BLOCKPIXELS, BLOCKPIXELS))
+        else:
+            screen.blit(self.image, (x-camerax, y-cameray))
 
 class Item:
 
@@ -225,16 +250,22 @@ class Item:
         self.style = style
         self.radius = radius
         self.active = True
-        self.image = pygame.transform.scale(ITEM_BANK[style], (radius*2, radius*2))
-        self.image.set_colorkey(WHITE)
+        self.image = ITEM_BANK[style]
 
-    def draw(self, x, y, camerax, cameray):
-        screen.blit(self.image, (x-camerax-self.radius, y-cameray-self.radius))
+    def draw(self, x, y, camerax, cameray, sizex=0, sizey=0):
+        if sizex == 0:
+            sizex = self.radius*2
+        if sizey == 0:
+            sizey = self.radius*2
+        image = pygame.transform.scale(self.image, (sizex, sizey))
+        image.set_colorkey(WHITE)
+        screen.blit(image, (x-camerax-sizex/2, y-cameray-sizey/2))
 
 m = Map(40, 70)
 r = Rat(m.spawnx, m.spawny)
-a = Item("Apple", 7)
-m.additem(a, m.spawnx+100, m.spawny)
+for i in range(10):
+    a = Item("Apple", 7)
+    m.additem(a, m.spawnx+300*i, m.spawny+40)
 
 running = True
 while running:
@@ -273,6 +304,7 @@ while running:
     screen.fill(BLACK)
     m.draw(camerax, cameray)
     r.draw(camerax, cameray)
+    r.drawinventory()
 
     pygame.display.flip()       
 
