@@ -1,5 +1,6 @@
 import pygame
 import random
+from os.path import exists
 
 WIDTH = 800
 HEIGHT = 600
@@ -33,11 +34,19 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("FSR")
 clock = pygame.time.Clock() ## For syncing the FPS
 
+def loadtile(tile):
+    tilelist = []
+    index = 0
+    while exists("Tiles\\"+tile+"_"+str(index)+".jpg"):
+        tilelist.append(pygame.image.load("Tiles\\"+tile+"_"+str(index)+".jpg").convert_alpha())
+        index += 1
+    return tilelist
+
 ITEM_LIST = ["Apple"]
 ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
 
 TILE_LIST = ["Stone"]
-TILE_BANK = {tile : pygame.image.load("Tiles\\"+tile+".jpg").convert_alpha() for tile in TILE_LIST}
+TILE_BANK = {tile : loadtile(tile) for tile in TILE_LIST}
 
 class Rat:
 
@@ -233,7 +242,7 @@ class Tile:
         self.priority = priority
         self.image = None
         if style in TILE_LIST:
-            self.image = pygame.transform.scale(TILE_BANK[style], (BLOCKPIXELS, BLOCKPIXELS))
+            self.image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS, BLOCKPIXELS))
     
     def additem(self, item, x, y):
         self.items[item] = (x, y)
