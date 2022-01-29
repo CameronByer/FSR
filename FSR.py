@@ -24,6 +24,8 @@ TILE_COLORS = {
     "Wall": STONEWALL
 }
 
+RATRADIUS = 8
+
 POISON = 10 #DMG/SEC
 
 BLOCKPIXELS = 32
@@ -59,7 +61,7 @@ class Rat:
         self.speedy = 0
         self.maxspeed = 12
         self.tempmaxspeed = self.maxspeed
-        self.radius = 8
+        self.radius = RATRADIUS
         self.inventory = [None]*5
         self.poison = 0
         self.maxpoison = 3*FPS
@@ -106,7 +108,6 @@ class Rat:
                 
     
     def update(self, m):
-        
         if self.getspeed() >= self.tempmaxspeed:
             self.setspeed(self.tempmaxspeed)
         xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
@@ -122,14 +123,19 @@ class Rat:
         self.y += ymovement
 
         self.tempmaxspeed = self.maxspeed
-        
-        if self.poison > 0:
-            self.poison -= 1
-            self.tempmaxspeed = self.maxspeed * (2-(self.poison/self.maxpoison))/3
-            
+
+        inpoison = False
         for tile in m.gettilecollisions(self.x, self.y, self.radius):
             if tile.style == "Sewer":
-                self.poison = self.maxpoison
+                inpoison = True
+                
+        if inpoison:
+            self.poison += 1
+            self.poison = min(self.poison, self.maxpoison)
+            self.tempmaxspeed = self.maxspeed*2/3
+        else:
+            if self.poison > 0:
+                self.poison -= 1
 
         for item in m.getitemcollisions(self.x, self.y, self.radius):
             if self.pickup(item):
@@ -153,11 +159,32 @@ class Map:
     def __init__(self, sizex, sizey):
         self.sizex = sizex
         self.sizey = sizey
+        self.spawnx = 0
+        self.spawny = 0
         self.items = {}
+        self.nodes = []
+        self.tiles = [[Tile("Void", True, False) for y in range(self.sizey)] for x in range(self.sizex)]
         self.generate()
 
     def additem(self, item, x, y):
         self.items[item] = (x, y)
+
+    def connectnodes(self, a, b, radius, water_radius):
+        if a.x == b.x:
+            self.gencorridor(a.x, a.y, 0, int((b.y-a.y)/abs(b.y-a.y)), abs(b.y-a.y), radius, water_radius)
+            a.child = b
+        elif a.y == b.y:
+            self.gencorridor(a.x, a.y, int((b.x-a.x)/abs(b.x-a.x)), 0, abs(b.x-a.x), radius, water_radius)
+            a.child = b
+        else:
+            if random.randint(0, 1):
+                cornernode = Node(a.x, b.y)
+            else:
+                cornernode = Node(b.x, a.y)
+            self.nodes.append(cornernode)
+            self.connectnodes(a, cornernode, radius, water_radius)
+            self.connectnodes(cornernode, b, radius, water_radius)
+            
 
     def draw(self, camerax, cameray):
         for x in range(self.sizex):
@@ -183,32 +210,40 @@ class Map:
                 self.placetile(tile1, relx+diry*j, rely+dirx*j)
                 self.placetile(tile2, relx-diry*j, rely-dirx*j)
 
-    def generate(self):
-        self.tiles = [[Tile("Void", True, False) for y in range(self.sizey)] for x in range(self.sizex)]
-        mainsewer = 8
-        maincorridor = 12
-        if self.sizex >= self.sizey:
-            variance = self.sizex//10
-            midx = self.sizex//2
-            startx = random.randint(midx-variance, midx+variance)
-            starty = 0
-            dx = 0
-            dy = 1
-            length = self.sizex
-            self.spawnx = (startx-(maincorridor+mainsewer)/2+1)*BLOCKPIXELS
-            self.spawny = 100
-        else:
-            variance = self.sizey//10
-            midy = self.sizey//2
-            startx = 0
-            starty = random.randint(midy-variance, midy+variance)
-            dx = 1
-            dy = 0
-            length = self.sizey
-            self.spawnx = 100
-            self.spawny = (starty-(maincorridor+mainsewer)/2+1)*BLOCKPIXELS
-        self.gencorridor(startx, starty, dx, dy, length, maincorridor, mainsewer)
-        
+    def generate(self, tunnelradius=5, sewageradius=2, nodenum=10):
+        startx = tunnelradius
+        starty = tunnelradius
+        startnode = Node(startx, starty, None)
+        self.nodes.append(startnode)
+        newnodes = []
+        for i in range(nodenum):
+            newnodes.append(Node(random.randint(tunnelradius, self.sizex-tunnelradius-1), random.randint(tunnelradius, self.sizey-tunnelradius-1)))
+        while newnodes != []:
+            closestdist = self.sizex+self.sizey
+            closestconnection = None
+            for node in self.nodes:
+                for newnode in newnodes:
+                    dist = node.dist(newnode)
+                    if dist < closestdist:
+                        closestconnection = (node, newnode)
+                        closestdist = dist
+            self.connectnodes(closestconnection[0], closestconnection[1], tunnelradius, sewageradius)
+            self.nodes.append(closestconnection[1])
+            newnodes.remove(closestconnection[1])
+
+        for i in range(self.sizex*self.sizey//100):
+            x = random.randint(0, self.sizex*BLOCKPIXELS-1)
+            y = random.randint(0, self.sizey*BLOCKPIXELS-1)
+            if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
+                a = Item("Apple", 7)
+                self.additem(a, x, y)
+
+        while self.spawnx == 0 and self.spawny == 0:
+            x = random.randint(BLOCKPIXELS, (self.sizex-1)*BLOCKPIXELS)
+            y = random.randint(BLOCKPIXELS, (self.sizey-1)*BLOCKPIXELS)
+            if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone" and len(self.gettilecollisions(x, y, RATRADIUS))==1:
+                self.spawnx = x
+                self.spawny = y
 
     def gettilecollisions(self, x, y, radius):
         collisions = []
@@ -231,7 +266,17 @@ class Map:
 
     def update(self):
         self.items = {item: pos for item, pos in self.items.items() if item.active}
-            
+
+
+class Node:
+
+    def __init__(self, x, y, child=None):
+        self.x = x
+        self.y = y
+        self.child = child
+
+    def dist(self, other):
+        return ((self.x-other.x)**2+(self.y-other.y)**2)**0.5
 
 class Tile:
 
@@ -270,11 +315,8 @@ class Item:
         image.set_colorkey(WHITE)
         screen.blit(image, (x-camerax-sizex/2, y-cameray-sizey/2))
 
-m = Map(40, 70)
+m = Map(60, 60)
 r = Rat(m.spawnx, m.spawny)
-for i in range(10):
-    a = Item("Apple", 7)
-    m.additem(a, m.spawnx+300*i, m.spawny+40)
 
 running = True
 while running:
