@@ -50,6 +50,9 @@ ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for
 TILE_LIST = ["Stone"]
 TILE_BANK = {tile : loadtile(tile) for tile in TILE_LIST}
 
+ENEMY_LIST = ["Sewer Ooze"]
+ENEMY_BANK = {enemy : pygame.image.load("Enemies\\"+enemy.replace(" ", "_")+".png").convert_alpha() for enemy in ENEMY_LIST}
+
 class Rat:
 
     def __init__(self, x, y):
@@ -104,8 +107,7 @@ class Rat:
             pygame.draw.rect(screen, BLACK, (spacing+(slotsize+spacing)*i, HEIGHT-slotsize-spacing, slotsize, slotsize))
             pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
             if self.inventory[i] != None:
-                self.inventory[i].draw(spacing+(slotsize+spacing)*i+slotsize/2, HEIGHT-slotsize-spacing+slotsize/2, 0, 0, slotsize-4*border, slotsize-4*border)
-                
+                self.inventory[i].draw(spacing+(slotsize+spacing)*i+slotsize/2, HEIGHT-slotsize-spacing+slotsize/2, 0, 0, slotsize-4*border, slotsize-4*border)   
     
     def update(self, m):
         if self.getspeed() >= self.tempmaxspeed:
@@ -161,9 +163,10 @@ class Map:
         self.sizey = sizey
         self.spawnx = 0
         self.spawny = 0
+        self.enemies = []
         self.items = {}
-        self.nodes = []
         self.tiles = [[Tile("Void", True, False) for y in range(self.sizey)] for x in range(self.sizex)]
+        self.nodes = []
         self.generate()
 
     def additem(self, item, x, y):
@@ -192,6 +195,8 @@ class Map:
                 self.tiles[x][y].draw(x*BLOCKPIXELS, y*BLOCKPIXELS, camerax, cameray)
         for item, pos in self.items.items():
             item.draw(pos[0], pos[1], camerax, cameray)
+        for enemy in self.enemies:
+            enemy.draw(camerax, cameray)
             
     def gencorridor(self, x, y, dirx, diry, length, radius, water_radius):
         for i in range(length+2*radius+1):
@@ -238,6 +243,13 @@ class Map:
                 a = Item("Apple", 7)
                 self.additem(a, x, y)
 
+        for i in range(self.sizex*self.sizey//200):
+            x = random.randint(0, self.sizex*BLOCKPIXELS-1)
+            y = random.randint(0, self.sizey*BLOCKPIXELS-1)
+            if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
+                s = Enemy("Sewer Ooze", x, y)
+                self.enemies.append(s)
+
         while self.spawnx == 0 and self.spawny == 0:
             x = random.randint(BLOCKPIXELS, (self.sizex-1)*BLOCKPIXELS)
             y = random.randint(BLOCKPIXELS, (self.sizey-1)*BLOCKPIXELS)
@@ -268,6 +280,18 @@ class Map:
         self.items = {item: pos for item, pos in self.items.items() if item.active}
 
 
+class Enemy:
+
+    def __init__(self, style, x, y):
+        self.x = x
+        self.y = y
+        self.style = style
+        self.image = ENEMY_BANK[style]
+
+    def draw(self, camerax, cameray):
+        screen.blit(self.image, (self.x-camerax, self.y-cameray))
+        
+
 class Node:
 
     def __init__(self, x, y, child=None):
@@ -277,6 +301,7 @@ class Node:
 
     def dist(self, other):
         return ((self.x-other.x)**2+(self.y-other.y)**2)**0.5
+
 
 class Tile:
 
@@ -298,6 +323,7 @@ class Tile:
         else:
             screen.blit(self.image, (x-camerax, y-cameray))
 
+
 class Item:
 
     def __init__(self, style, radius):
@@ -314,6 +340,7 @@ class Item:
         image = pygame.transform.scale(self.image, (sizex, sizey))
         image.set_colorkey(WHITE)
         screen.blit(image, (x-camerax-sizex/2, y-cameray-sizey/2))
+
 
 m = Map(60, 60)
 r = Rat(m.spawnx, m.spawny)
