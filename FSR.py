@@ -39,7 +39,7 @@ clock = pygame.time.Clock() ## For syncing the FPS
 def loadtile(tile):
     tilelist = []
     index = 0
-    while exists("Tiles\\"+tile+"_"+str(index)+".png"):
+    while exists("Tiles\\"+tile+"_"+str(index)+".jpg"):
         tilelist.append(pygame.image.load("Tiles\\"+tile+"_"+str(index)+".jpg").convert_alpha())
         index += 1
     return tilelist
