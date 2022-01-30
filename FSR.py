@@ -247,7 +247,7 @@ class Map:
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
             y = random.randint(0, self.sizey*BLOCKPIXELS-1)
             if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
-                s = Enemy("Sewer Ooze", x, y)
+                s = Enemy("Sewer Ooze", x, y, 12)
                 self.enemies.append(s)
 
         while self.spawnx == 0 and self.spawny == 0:
@@ -276,20 +276,78 @@ class Map:
             if tile.priority >= self.tiles[x][y].priority:
                 self.tiles[x][y] = tile
 
-    def update(self):
+    def update(self, rat):
+        for enemy in self.enemies:
+            enemy.update(self, rat)
+        
         self.items = {item: pos for item, pos in self.items.items() if item.active}
 
 
 class Enemy:
 
-    def __init__(self, style, x, y):
+    def __init__(self, style, x, y, radius):
+        self.style = style
         self.x = x
         self.y = y
-        self.style = style
+        self.radius = radius
+        self.speedx = 0
+        self.speedy = 0
+        self.maxspeed = 8
+        self.tempmaxspeed = self.maxspeed
         self.image = ENEMY_BANK[style]
+        self.image = pygame.transform.scale(self.image, (radius*2, radius*2))
 
     def draw(self, camerax, cameray):
-        screen.blit(self.image, (self.x-camerax, self.y-cameray))
+        screen.blit(self.image, (self.x-camerax-self.radius, self.y-cameray-self.radius))
+
+    def getspeed(self): # Feet per second
+        return (self.speedx**2+self.speedy**2)**0.5
+
+    def setspeed(self, speed): # Feet per second
+        curspeed = self.getspeed()
+        if curspeed != 0:
+            self.speedx *= speed/curspeed
+            self.speedy *= speed/curspeed
+
+    def update(self, worldmap, rat):
+        self.speedx = rat.x - self.x
+        self.speedy = rat.y - self.y
+        if self.getspeed() != 0:
+            self.setspeed(self.tempmaxspeed)
+
+        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
+        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
+        if any(tile.solid for tile in m.gettilecollisions(self.x+xmovement, self.y+ymovement, self.radius)):
+            if any(tile.solid for tile in m.gettilecollisions(self.x+xmovement, self.y, self.radius)):
+                xmovement = 0
+                if any(tile.solid for tile in m.gettilecollisions(self.x, self.y+ymovement, self.radius)):
+                    ymovement = 0
+            else:
+                ymovement = 0
+        self.speedx = xmovement
+        self.speedy = ymovement
+        self.setspeed(self.tempmaxspeed)
+        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
+        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
+        if any(tile.solid for tile in m.gettilecollisions(self.x+xmovement, self.y+ymovement, self.radius)):
+            if any(tile.solid for tile in m.gettilecollisions(self.x+xmovement, self.y, self.radius)):
+                xmovement = 0
+                if any(tile.solid for tile in m.gettilecollisions(self.x, self.y+ymovement, self.radius)):
+                    ymovement = 0
+            else:
+                ymovement = 0
+        self.x += xmovement
+        self.y += ymovement
+
+        self.tempmaxspeed = self.maxspeed
+
+        inpoison = False
+        for tile in m.gettilecollisions(self.x, self.y, self.radius):
+            if tile.style == "Sewer":
+                inpoison = True
+                
+        if inpoison:
+            self.tempmaxspeed = self.maxspeed*2
         
 
 class Node:
@@ -375,7 +433,7 @@ while running:
             if event.button == 1: #Left Click
                 pass
 
-    m.update()
+    m.update(r)
     r.update(m)
     camerax = r.x - WIDTH//2
     cameray = r.y - HEIGHT//2
