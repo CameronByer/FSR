@@ -371,9 +371,6 @@ class Tile:
         self.image = None
         if style in TILE_LIST:
             self.image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS, BLOCKPIXELS))
-    
-    def additem(self, item, x, y):
-        self.items[item] = (x, y)
 
     def draw(self, x, y, camerax, cameray):
         if self.image == None:
