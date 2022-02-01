@@ -154,7 +154,7 @@ class Map:
     def draw(self, camerax, cameray):
         for x in range(self.sizex):
             for y in range(self.sizey):
-                self.tiles[x][y].draw(x*BLOCKPIXELS, y*BLOCKPIXELS, camerax, cameray)
+                self.tiles[x][y].draw(screen, camerax, cameray)
         for item in self.items:
             item.draw(screen, camerax, cameray)
         for enemy in self.enemies:
@@ -263,21 +263,16 @@ class Node:
 
 class Tile(Entity):
 
-    def __init__(self, style, x, y, solid, water, priority = 0):
+    def __init__(self, style, x, y, solid, water, priority=0, tilewidth=1, tileheight=1):
+        image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS*tilewidth, BLOCKPIXELS*tileheight))
+        Entity.__init__(self, x, y, BLOCKPIXELS*tilewidth, BLOCKPIXELS*tileheight, image)
         self.style = style
+        self.tilewidth = tilewidth
+        self.tileheight = tileheight
         self.solid = solid
         self.water = water
         self.priority = priority
-        self.image = None
-        if style in TILE_LIST:
-            self.image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS, BLOCKPIXELS))
-
-    def draw(self, x, y, camerax, cameray):
-        if self.image == None:
-            pygame.draw.rect(screen, TILE_COLORS[self.style], (x-camerax, y-cameray, BLOCKPIXELS, BLOCKPIXELS))
-        else:
-            screen.blit(self.image, (x-camerax, y-cameray))
-
+        
 
 class WorldItem(Entity):
 
