@@ -94,13 +94,9 @@ class Rat(Entity):
                 self.inventory[i].draw(spacing+(slotsize+spacing)*i+border, HEIGHT-spacing-slotsize+border, slotsize-4*border, slotsize-4*border)
     
     def update(self, worldmap):
-        Entity.update(self, worldmap, FPS)
-        inpoison = False
-        for tile in worldmap.gettilecollisions(self):
-            if tile.style == "Sewer":
-                inpoison = True
+        Entity.update(self, worldmap)
                 
-        if inpoison:
+        if self.insewer(worldmap):
             self.poison += 1
             self.poison = min(self.poison, self.maxpoison)
             self.tempmaxspeed = self.maxspeed*2/3
@@ -108,7 +104,7 @@ class Rat(Entity):
             if self.poison > 0:
                 self.poison -= 1
 
-        for item in worldmap.getitemcollisions(self):
+        for item in self.getcollisions(worldmap.items):
             if self.pickup(item):
                 item.active = False
 
@@ -224,16 +220,6 @@ class Map:
                 self.spawnx = x
                 self.spawny = y
 
-    def gettilecollisions(self, entity, offx=0, offy=0):
-        collisions = []
-        for i in range(int(entity.x+offx)//BLOCKPIXELS, int(entity.x+entity.sizex+offx)//BLOCKPIXELS+1):
-            for j in range(int(entity.y+offy)//BLOCKPIXELS, int(entity.y+entity.sizey+offy)//BLOCKPIXELS+1):
-                collisions.append(self.tiles[i][j])
-        return collisions
-
-    def getitemcollisions(self, entity):
-        return [item for item in self.items if entity.iscollision(item)]
-
     def placetile(self, tile, x, y):
         if x>=0 and x<self.sizex and y>=0 and y<self.sizey:
             if tile.priority >= self.tiles[x][y].priority:
@@ -258,14 +244,9 @@ class Enemy(Entity):
         self.speedy = rat.y - self.y
         if self.getspeed() != 0:
             self.setspeed(self.tempmaxspeed)
-        Entity.update(self, worldmap, FPS)
-
-        inpoison = False
-        for tile in worldmap.gettilecollisions(self):
-            if tile.style == "Sewer":
-                inpoison = True
+        Entity.update(self, worldmap)
                 
-        if inpoison:
+        if self.insewer(worldmap):
             self.tempmaxspeed = self.maxspeed*2
         
 

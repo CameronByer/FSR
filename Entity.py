@@ -1,3 +1,7 @@
+FPS = 60
+BLOCKPIXELS = 32
+BLOCKFEET = 3
+
 class Entity:
 
     def __init__(self, x, y, sizex, sizey, image, maxspeed=0):
@@ -24,9 +28,25 @@ class Entity:
             return False
         return True
 
+    def getcollisions(self, entitylist):
+        return [entity for entity in entitylist if self.iscollision(entity)]
+
+    def gettilecollisions(self, worldmap, offx=0, offy=0):
+        collisions = []
+        for i in range(int(self.x+offx)//BLOCKPIXELS, int(self.x+self.sizex-1+offx)//BLOCKPIXELS+1):
+            for j in range(int(self.y+offy)//BLOCKPIXELS, int(self.y+self.sizey-1+offy)//BLOCKPIXELS+1):
+                collisions.append(worldmap.tiles[i][j])
+        return collisions
+
     def draw(self, screen, camerax, cameray):
         if self.active:
             screen.blit(self.image, (self.x-camerax, self.y-cameray))
+
+    def insewer(self, worldmap):
+        for tile in self.gettilecollisions(worldmap):
+            if tile.style == "Sewer":
+                return True
+        return False
 
     def getspeed(self): # Feet per second
         return (self.speedx**2+self.speedy**2)**0.5
@@ -37,15 +57,15 @@ class Entity:
             self.speedx *= speed/curspeed
             self.speedy *= speed/curspeed
 
-    def update(self, worldmap, FPS, BLOCKPIXELS=32, BLOCKFEET=3):
+    def update(self, worldmap):
         if self.getspeed() >= self.tempmaxspeed:
             self.setspeed(self.tempmaxspeed)
         xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
         ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
-        if any(tile.solid for tile in worldmap.gettilecollisions(self, xmovement, ymovement)):
-            if any(tile.solid for tile in worldmap.gettilecollisions(self, xmovement, 0)):
+        if any(tile.solid for tile in self.gettilecollisions(worldmap, xmovement, ymovement)):
+            if any(tile.solid for tile in self.gettilecollisions(worldmap, xmovement, 0)):
                 xmovement = 0
-                if any(tile.solid for tile in worldmap.gettilecollisions(self, 0, ymovement)):
+                if any(tile.solid for tile in self.gettilecollisions(worldmap, 0, ymovement)):
                     ymovement = 0
             else:
                 ymovement = 0
