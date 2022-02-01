@@ -93,25 +93,10 @@ class Rat(Entity):
             if self.inventory[i] != None:
                 self.inventory[i].draw(spacing+(slotsize+spacing)*i+border, HEIGHT-spacing-slotsize+border, slotsize-4*border, slotsize-4*border)
     
-    def update(self, m):
-        if self.getspeed() >= self.tempmaxspeed:
-            self.setspeed(self.tempmaxspeed)
-        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
-        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
-        if any(tile.solid for tile in m.gettilecollisions(self, xmovement, ymovement)):
-            if any(tile.solid for tile in m.gettilecollisions(self, xmovement, 0)):
-                xmovement = 0
-                if any(tile.solid for tile in m.gettilecollisions(self, 0, ymovement)):
-                    ymovement = 0
-            else:
-                ymovement = 0
-        self.x += xmovement
-        self.y += ymovement
-
-        self.tempmaxspeed = self.maxspeed
-
+    def update(self, worldmap):
+        Entity.update(self, worldmap, FPS)
         inpoison = False
-        for tile in m.gettilecollisions(self):
+        for tile in worldmap.gettilecollisions(self):
             if tile.style == "Sewer":
                 inpoison = True
                 
@@ -123,7 +108,7 @@ class Rat(Entity):
             if self.poison > 0:
                 self.poison -= 1
 
-        for item in m.getitemcollisions(self):
+        for item in worldmap.getitemcollisions(self):
             if self.pickup(item):
                 item.active = False
 
@@ -134,8 +119,8 @@ class Rat(Entity):
             self.health = self.maxhealth
             self.poison = 0
             self.inventory = [None]*5
-            self.x = m.spawnx
-            self.y = m.spawny
+            self.x = worldmap.spawnx
+            self.y = worldmap.spawny
         elif self.health > self.maxhealth:
             self.health = self.maxhealth
             
@@ -273,35 +258,10 @@ class Enemy(Entity):
         self.speedy = rat.y - self.y
         if self.getspeed() != 0:
             self.setspeed(self.tempmaxspeed)
-
-        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
-        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
-        if any(tile.solid for tile in m.gettilecollisions(self, xmovement, ymovement)):
-            if any(tile.solid for tile in m.gettilecollisions(self, xmovement, 0)):
-                xmovement = 0
-                if any(tile.solid for tile in m.gettilecollisions(self, 0, ymovement)):
-                    ymovement = 0
-            else:
-                ymovement = 0
-        self.speedx = xmovement
-        self.speedy = ymovement
-        self.setspeed(self.tempmaxspeed)
-        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
-        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
-        if any(tile.solid for tile in m.gettilecollisions(self, xmovement, ymovement)):
-            if any(tile.solid for tile in m.gettilecollisions(self, xmovement, 0)):
-                xmovement = 0
-                if any(tile.solid for tile in m.gettilecollisions(self, 0, ymovement)):
-                    ymovement = 0
-            else:
-                ymovement = 0
-        self.x += xmovement
-        self.y += ymovement
-
-        self.tempmaxspeed = self.maxspeed
+        Entity.update(self, worldmap, FPS)
 
         inpoison = False
-        for tile in m.gettilecollisions(self):
+        for tile in worldmap.gettilecollisions(self):
             if tile.style == "Sewer":
                 inpoison = True
                 

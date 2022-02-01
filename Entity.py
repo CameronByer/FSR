@@ -37,9 +37,19 @@ class Entity:
             self.speedx *= speed/curspeed
             self.speedy *= speed/curspeed
 
-    def update(self):
+    def update(self, worldmap, FPS, BLOCKPIXELS=32, BLOCKFEET=3):
         if self.getspeed() >= self.tempmaxspeed:
             self.setspeed(self.tempmaxspeed)
+        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
+        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
+        if any(tile.solid for tile in worldmap.gettilecollisions(self, xmovement, ymovement)):
+            if any(tile.solid for tile in worldmap.gettilecollisions(self, xmovement, 0)):
+                xmovement = 0
+                if any(tile.solid for tile in worldmap.gettilecollisions(self, 0, ymovement)):
+                    ymovement = 0
+            else:
+                ymovement = 0
         self.x += xmovement
         self.y += ymovement
+
         self.tempmaxspeed = self.maxspeed
