@@ -44,7 +44,7 @@ def loadtile(tile):
 ITEM_LIST = ["Apple"]
 ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
 
-TILE_LIST = ["Sewer", "Stone", "Void", "Wall"]
+TILE_LIST = ["Dumpster", "Sewer", "Stone", "Void", "Wall"]
 TILE_BANK = {tile : loadtile(tile) for tile in TILE_LIST}
 
 ENEMY_LIST = ["Sewer Ooze"]
@@ -199,6 +199,33 @@ class Map:
                 self.nodes.append(closestconnection[1])
             newnodes.remove(closestconnection[1])
 
+        dumpsterstoplace = 3
+        dumpwidth = 9
+        dumpheight = 8
+        while dumpsterstoplace > 0:
+            x = tunnelradius
+            y = tunnelradius
+            while not self.isfree(x+2, y+2, dumpwidth-4, dumpheight-4) or self.isfree(x+1, y+1, dumpwidth-2, dumpheight-2):
+                x = random.randint(tunnelradius, self.sizex-tunnelradius-dumpwidth)
+                y = random.randint(tunnelradius, self.sizey-tunnelradius-dumpheight)
+            for i in range(dumpwidth):
+                tile1 = Tile("Wall", (x+i)*BLOCKPIXELS, (y)*BLOCKPIXELS, True, False, 1)
+                tile2 = Tile("Wall", (x+i)*BLOCKPIXELS, (y+dumpheight-1)*BLOCKPIXELS, True, False, 1)
+                self.placetile(tile1, x+i, y)
+                self.placetile(tile2, x+i, y+dumpheight-1)
+            for i in range(dumpheight):
+                tile1 = Tile("Wall", (x)*BLOCKPIXELS, (y+i)*BLOCKPIXELS, True, False, 1)
+                tile2 = Tile("Wall", (x+dumpwidth-1)*BLOCKPIXELS, (y+i)*BLOCKPIXELS, True, False, 1)
+                self.placetile(tile1, x, y+i)
+                self.placetile(tile2, x+dumpwidth-1, y+i)
+            for i in range(dumpwidth-2):
+                for j in range(dumpheight-2):
+                    tile = Tile("Stone", (x+1+i)*BLOCKPIXELS, (y+1+j)*BLOCKPIXELS, False, False, 2)
+                    self.placetile(tile, x+1+i, y+1+j)
+            tile = Tile("Dumpster", (x+3)*BLOCKPIXELS, (y+3)*BLOCKPIXELS, True, False, 5, 3, 2)
+            self.placetile(tile, x+3, y+3)
+            dumpsterstoplace -= 1
+
         for i in range(self.sizex*self.sizey//100):
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
             y = random.randint(0, self.sizey*BLOCKPIXELS-1)
@@ -220,9 +247,15 @@ class Map:
                 self.spawnx = x
                 self.spawny = y
 
+    def isfree(self, x, y, width, height):
+        return all(all(self.tiles[x+i][y+j].priority<=1 for i in range(height)) for j in range(width))
+
     def placetile(self, tile, x, y):
-        if x>=0 and x<self.sizex and y>=0 and y<self.sizey:
-            if tile.priority >= self.tiles[x][y].priority:
+        if x>=0 and x+tile.spanx<=self.sizex and y>=0 and y+tile.spany<=self.sizey:
+            if all(all(tile.priority >= self.tiles[x+i][y+j].priority for j in range(tile.spany)) for i in range(tile.spanx)):
+                for i in range(tile.spanx):
+                    for j in range(tile.spany):
+                        self.tiles[x+i][y+j] = tile.birth(x+i, y+j)
                 self.tiles[x][y] = tile
 
     def update(self, rat):
@@ -263,16 +296,23 @@ class Node:
 
 class Tile(Entity):
 
-    def __init__(self, style, x, y, solid, water, priority=0, tilewidth=1, tileheight=1):
-        image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS*tilewidth, BLOCKPIXELS*tileheight))
-        Entity.__init__(self, x, y, BLOCKPIXELS*tilewidth, BLOCKPIXELS*tileheight, image)
+    def __init__(self, style, x, y, solid, water, priority=0, spanx=1, spany=1, parent=None):
+        image = pygame.transform.scale(random.choice(TILE_BANK[style]), (BLOCKPIXELS*spanx, BLOCKPIXELS*spany))
+        Entity.__init__(self, x, y, BLOCKPIXELS*spanx, BLOCKPIXELS*spany, image)
         self.style = style
-        self.tilewidth = tilewidth
-        self.tileheight = tileheight
         self.solid = solid
         self.water = water
+        self.spanx = spanx
+        self.spany = spany
         self.priority = priority
-        
+        self.parent = parent
+
+    def birth(self, x, y):
+        return Tile(self.style, x, y, self.solid, self.water, self.priority, self.spanx, self.spany, self)
+
+    def draw(self, screen, camerax, cameray):
+        if self.parent == None:
+            Entity.draw(self, screen, camerax, cameray)
 
 class WorldItem(Entity):
 
