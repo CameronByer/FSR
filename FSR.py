@@ -59,6 +59,7 @@ class Rat(Entity):
         self.health = 100
         self.maxhealth = 100
         self.inventory = [None]*5
+        self.selected = 0
         self.poison = 0
         self.maxpoison = 3*FPS
 
@@ -92,6 +93,9 @@ class Rat(Entity):
             pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
             if self.inventory[i] != None:
                 self.inventory[i].draw(spacing+(slotsize+spacing)*i+border, HEIGHT-spacing-slotsize+border, slotsize-4*border, slotsize-4*border)
+
+    def heal(self, amount):
+        self.health = min(self.health+amount, self.maxhealth)
     
     def update(self, worldmap):
         Entity.update(self, worldmap)
@@ -119,7 +123,12 @@ class Rat(Entity):
             self.y = worldmap.spawny
         elif self.health > self.maxhealth:
             self.health = self.maxhealth
-            
+
+    def useitem(self):
+        item = self.inventory[self.selected]
+        if item!=None and item.use(self):
+            self.inventory[self.selected] = None
+    
 
 class Map:
 
@@ -335,6 +344,12 @@ class Item:
         image = pygame.transform.scale(self.image, (sizex, sizey))
         screen.blit(image, (x, y))
 
+    def use(self, player):
+        if self.style == "Apple":
+            player.heal(25)
+            return True
+        return False
+
 
 m = Map(60, 60)
 r = Rat(m.spawnx, m.spawny)
@@ -364,7 +379,7 @@ while running:
             pass
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: #Left Click
-                pass
+                r.useitem()
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1: #Left Click
                 pass
