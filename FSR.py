@@ -3,6 +3,7 @@ import random
 from os.path import exists
 
 from Entity import Entity
+import Item
 
 WIDTH = 800
 HEIGHT = 600
@@ -41,9 +42,6 @@ def loadtile(tile):
         index += 1
     return tilelist
 
-ITEM_LIST = ["Apple"]
-ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
-
 TILE_LIST = ["Dumpster", "Sewer", "Stone", "Void", "Wall"]
 TILE_BANK = {tile : loadtile(tile) for tile in TILE_LIST}
 
@@ -66,7 +64,7 @@ class Rat(Entity):
     def pickup(self, worlditem):
         for slot in range(5):
             if self.inventory[slot] == None:
-                self.inventory[slot] = Item(worlditem.style)
+                self.inventory[slot] = Item.ITEM_LIST[worlditem.style]()
                 return True
         return False
 
@@ -92,7 +90,7 @@ class Rat(Entity):
             pygame.draw.rect(screen, BLACK, (spacing+(slotsize+spacing)*i, HEIGHT-slotsize-spacing, slotsize, slotsize))
             pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
             if self.inventory[i] != None:
-                self.inventory[i].draw(spacing+(slotsize+spacing)*i+border, HEIGHT-spacing-slotsize+border, slotsize-4*border, slotsize-4*border)
+                self.inventory[i].draw(spacing+(slotsize+spacing)*i+2*border, HEIGHT-spacing-slotsize+2*border, slotsize-4*border, slotsize-4*border)
 
     def heal(self, amount):
         self.health = min(self.health+amount, self.maxhealth)
@@ -125,6 +123,7 @@ class Rat(Entity):
             self.health = self.maxhealth
 
     def useitem(self):
+        print("USE")
         item = self.inventory[self.selected]
         if item!=None and item.use(self):
             self.inventory[self.selected] = None
@@ -239,8 +238,15 @@ class Map:
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
             y = random.randint(0, self.sizey*BLOCKPIXELS-1)
             if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
-                a = WorldItem("Apple", x, y, 14, 14)
-                self.items.append(a)
+                a = Item.Apple()
+                self.items.append(a.drop(x, y, 18, 21))
+
+        for i in range(self.sizex*self.sizey//300):
+            x = random.randint(0, self.sizex*BLOCKPIXELS-1)
+            y = random.randint(0, self.sizey*BLOCKPIXELS-1)
+            if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
+                b = Item.Banana()
+                self.items.append(b.drop(x, y, 28, 32))
 
         for i in range(self.sizex*self.sizey//200):
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
@@ -331,24 +337,6 @@ class WorldItem(Entity):
         image = pygame.transform.scale(image, (sizex, sizey))
         image.set_colorkey(WHITE)
         Entity.__init__(self, x, y, sizex, sizey, image)
-
-
-class Item:
-
-    def __init__(self, style):
-        self.style = style
-        self.image = ITEM_BANK[style]
-        self.image.set_colorkey(WHITE)
-
-    def draw(self, x, y, sizex, sizey):
-        image = pygame.transform.scale(self.image, (sizex, sizey))
-        screen.blit(image, (x, y))
-
-    def use(self, player):
-        if self.style == "Apple":
-            player.heal(25)
-            return True
-        return False
 
 
 m = Map(60, 60)
