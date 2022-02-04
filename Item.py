@@ -5,7 +5,7 @@ class Item:
     def __init__(self, style):
         self.style = style
         self.image = ITEM_BANK[style]
-    def draw(self, x, y, sizex, sizey):
+    def draw(self, screen, x, y, sizex, sizey):
         image = pygame.transform.scale(self.image, (sizex, sizey))
         screen.blit(image, (x, y))
     def drop(self, x, y, sizex, sizey):
@@ -19,6 +19,8 @@ class WorldItem(Entity):
         image = ITEM_BANK[style]
         image = pygame.transform.scale(image, (sizex, sizey))
         Entity.__init__(self, x, y, sizex, sizey, image)
+    def pickup(self):
+        return ITEM_LIST[self.style]()
 
 
 class Apple(Item):
@@ -38,7 +40,5 @@ class Banana(Item):
             return False
         return False
 
-pygame.init()
-screen = pygame.display.set_mode((1, 1))
 ITEM_LIST = {"Apple":Apple, "Banana":Banana}
 ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}

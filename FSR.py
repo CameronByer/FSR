@@ -1,12 +1,17 @@
 import pygame
+pygame.init()
+WIDTH = 800
+HEIGHT = 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("FSR")
+
 import random
 from os.path import exists
 
 from Entity import Entity
+import Enemy
 import Item
 
-WIDTH = 800
-HEIGHT = 600
 FPS = 60
 
 WHITE = (255, 255, 255)
@@ -27,9 +32,6 @@ POISON = 10 #DMG/SEC
 BLOCKPIXELS = 32
 BLOCKFEET = 3
 
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("FSR")
 clock = pygame.time.Clock() ## For syncing the FPS
 
 def loadtile(tile):
@@ -44,9 +46,6 @@ def loadtile(tile):
 
 TILE_LIST = ["Dumpster", "Sewer", "Stone", "Void", "Wall"]
 TILE_BANK = {tile : loadtile(tile) for tile in TILE_LIST}
-
-ENEMY_LIST = ["Sewer Ooze"]
-ENEMY_BANK = {enemy : pygame.image.load("Enemies\\"+enemy.replace(" ", "_")+".png").convert_alpha() for enemy in ENEMY_LIST}
 
 RAT_IMAGE = pygame.image.load("Rat.png").convert_alpha()
 
@@ -64,7 +63,7 @@ class Rat(Entity):
     def pickup(self, worlditem):
         for slot in range(5):
             if self.inventory[slot] == None:
-                self.inventory[slot] = Item.ITEM_LIST[worlditem.style]()
+                self.inventory[slot] = worlditem.pickup()
                 return True
         return False
 
@@ -90,7 +89,7 @@ class Rat(Entity):
             pygame.draw.rect(screen, BLACK, (spacing+(slotsize+spacing)*i, HEIGHT-slotsize-spacing, slotsize, slotsize))
             pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
             if self.inventory[i] != None:
-                self.inventory[i].draw(spacing+(slotsize+spacing)*i+2*border, HEIGHT-spacing-slotsize+2*border, slotsize-4*border, slotsize-4*border)
+                self.inventory[i].draw(screen, spacing+(slotsize+spacing)*i+2*border, HEIGHT-spacing-slotsize+2*border, slotsize-4*border, slotsize-4*border)
 
     def heal(self, amount):
         self.health = min(self.health+amount, self.maxhealth)
@@ -123,7 +122,6 @@ class Rat(Entity):
             self.health = self.maxhealth
 
     def useitem(self):
-        print("USE")
         item = self.inventory[self.selected]
         if item!=None and item.use(self):
             self.inventory[self.selected] = None
@@ -252,7 +250,7 @@ class Map:
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
             y = random.randint(0, self.sizey*BLOCKPIXELS-1)
             if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
-                s = Enemy("Sewer Ooze", x, y, 24, 24, 8)
+                s = Enemy.SewerOoze(x, y)
                 self.enemies.append(s)
 
         while self.spawnx == 0 and self.spawny == 0:
@@ -278,26 +276,7 @@ class Map:
             enemy.update(self, rat)
         self.items = [item for item in self.items if item.active]
 
-
-class Enemy(Entity):
-
-    def __init__(self, style, x, y, sizex, sizey, maxspeed):
-        image = ENEMY_BANK[style]
-        image = pygame.transform.scale(ENEMY_BANK[style], (sizex, sizey))
-        Entity.__init__(self, x, y, sizex, sizey, image, maxspeed)
-        self.style = style
-
-    def update(self, worldmap, rat):
-        self.speedx = rat.x - self.x
-        self.speedy = rat.y - self.y
-        if self.getspeed() != 0:
-            self.setspeed(self.tempmaxspeed)
-        Entity.update(self, worldmap)
-                
-        if self.insewer(worldmap):
-            self.tempmaxspeed = self.maxspeed*2
         
-
 class Node:
 
     def __init__(self, x, y, child=None):
