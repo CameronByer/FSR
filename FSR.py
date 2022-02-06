@@ -84,12 +84,20 @@ class Rat(Entity):
         missingwidth = percentmissing * (width-2*border)
         pygame.draw.rect(screen, RED, (x+border, y+border, missingwidth, height-border*2))
 
-    def drawinventory(self, slotsize = 40, spacing = 10, border = 2):
+    def drawinventory(self, slotsize=40, spacing=10):
         for i in range(5):
-            pygame.draw.rect(screen, BLACK, (spacing+(slotsize+spacing)*i, HEIGHT-slotsize-spacing, slotsize, slotsize))
-            pygame.draw.rect(screen, WHITE, (spacing+(slotsize+spacing)*i+border, HEIGHT-slotsize-spacing+border, slotsize-2*border, slotsize-2*border))
-            if self.inventory[i] != None:
-                self.inventory[i].draw(screen, spacing+(slotsize+spacing)*i+2*border, HEIGHT-spacing-slotsize+2*border, slotsize-4*border, slotsize-4*border)
+            x = spacing+(slotsize+spacing)*i
+            y = HEIGHT-slotsize-spacing
+            if i == self.selected:
+                self.drawitemslot(self.inventory[i], x-spacing/2, y-spacing/2, slotsize+spacing)
+            else:
+                self.drawitemslot(self.inventory[i], x, y, slotsize)
+
+    def drawitemslot(self, item, x, y, size):
+        pygame.draw.rect(screen, BLACK, (x, y, size, size))
+        pygame.draw.rect(screen, WHITE, (x+2, y+2, size-4, size-4))
+        if item != None:
+            item.draw(screen, x+4, y+4, size-8, size-8)
 
     def heal(self, amount):
         self.health = min(self.health+amount, self.maxhealth)
@@ -276,7 +284,7 @@ class Map:
             enemy.update(self, rat)
         self.items = [item for item in self.items if item.active]
 
-        
+
 class Node:
 
     def __init__(self, x, y, child=None):
@@ -343,7 +351,16 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            pass
+            if event.key == pygame.K_1:
+                r.selected = 0
+            elif event.key == pygame.K_2:
+                r.selected = 1
+            elif event.key == pygame.K_3:
+                r.selected = 2
+            elif event.key == pygame.K_4:
+                r.selected = 3
+            elif event.key == pygame.K_5:
+                r.selected = 4
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: #Left Click
                 r.useitem()
