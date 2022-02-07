@@ -16,7 +16,6 @@ class Entity:
         self.tempmaxspeed = maxspeed
         self.active = True
 
-
     def iscollision(self, other):
         if self.x >= other.x+other.sizex:
             return False

@@ -258,7 +258,10 @@ class Map:
             x = random.randint(0, self.sizex*BLOCKPIXELS-1)
             y = random.randint(0, self.sizey*BLOCKPIXELS-1)
             if self.tiles[x//BLOCKPIXELS][y//BLOCKPIXELS].style == "Stone":
-                s = Enemy.SewerOoze(x, y)
+                if random.randint(0, 1):
+                    s = Enemy.SewerOoze(x, y)
+                else:
+                    s = Enemy.RedOoze(x, y)
                 self.enemies.append(s)
 
         while self.spawnx == 0 and self.spawny == 0:
