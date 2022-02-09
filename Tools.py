@@ -1,8 +1,8 @@
 class Line:
     def __init__(self, p1, p2):
         if p1[0] == p2[0]:
-            self.xint == p1[0]
-            self.yint == None
+            self.xint = p1[0]
+            self.yint = None
             self.slope = None
         else:
             self.slope = (p2[1]-p1[1])/(p2[0]-p1[0])

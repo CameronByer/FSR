@@ -31,27 +31,41 @@ class Entity:
         return True
 
     def isvisible(self, other, worldmap):
+        selfx, selfy = self.getcenter()
+        otherx, othery = other.getcenter()
         line = Tools.Line((self.x, self.y), (other.x, other.y))
         sightline = []
-        xrange = list(range(math.floor(min(self.x, other.x)//32), math.ceil(max(self.x, other.x)//32)+1))
-        yrange = list(range(math.floor(min(self.y, other.y)//32), math.ceil(max(self.y, other.y)//32)+1))
+        xrange = list(range(math.ceil(min(self.x, other.x)/BLOCKPIXELS), math.ceil(max(self.x, other.x)/BLOCKPIXELS)))
+        yrange = list(range(math.ceil(min(self.y, other.y)/BLOCKPIXELS), math.ceil(max(self.y, other.y)/BLOCKPIXELS)))
+        if self.x <= other.x:
+            x = int(self.x//BLOCKPIXELS)
+            y = int(self.y//BLOCKPIXELS)
+        else:
+            x = int(other.x//BLOCKPIXELS)
+            y = int(other.y//BLOCKPIXELS)
         if line.slope == None:
-            x = self.x // 32
-            for y in yrange:
-                if worldmap.tiles[x][y].solid:
-                    return False
-            return True
+            return not any(worldmap.tiles[x][y] for y in yrange)
         if line.slope < 0:
             yrange.reverse()
-        y = yrange[0]
+        while xrange and yrange:
+            if xrange and ((not yrange) or xrange[0]*BLOCKPIXELS <= line.getx(yrange[0]*BLOCKPIXELS)):
+                x = xrange[0]
+                xrange = xrange[1:]
+            else:
+                y = yrange[0]
+                yrange = yrange[1:]
+            if worldmap.tiles[x][y].solid:
+                return False
         for x in xrange:
             if worldmap.tiles[x][y].solid:
                 return False
-            while line.getx(y) < x:
-                y += 1
-                if worldmap.tiles[x][y].solid:
-                    return False
-        return True     
+        for y in yrange:
+            if worldmap.tiles[x][y].solid:
+                return False
+        return True
+
+    def getcenter(self):
+        return self.x+self.sizex/2, self.y+self.sizey/2
 
     def getcollisions(self, entitylist):
         return [entity for entity in entitylist if self.iscollision(entity)]
