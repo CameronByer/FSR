@@ -4,3 +4,4 @@ Enemies/Thumbs.db
 __pycache__/Entity.cpython-39.pyc
 __pycache__/Item.cpython-39.pyc
 __pycache__/Enemy.cpython-39.pyc
+*.pyc

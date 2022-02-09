@@ -1,3 +1,6 @@
+import math
+import Tools
+
 FPS = 60
 BLOCKPIXELS = 32
 BLOCKFEET = 3
@@ -26,6 +29,29 @@ class Entity:
         if self.y+self.sizey <= other.y:
             return False
         return True
+
+    def isvisible(self, other, worldmap):
+        line = Tools.Line((self.x, self.y), (other.x, other.y))
+        sightline = []
+        xrange = list(range(math.floor(min(self.x, other.x)//32), math.ceil(max(self.x, other.x)//32)+1))
+        yrange = list(range(math.floor(min(self.y, other.y)//32), math.ceil(max(self.y, other.y)//32)+1))
+        if line.slope == None:
+            x = self.x // 32
+            for y in yrange:
+                if worldmap.tiles[x][y].solid:
+                    return False
+            return True
+        if line.slope < 0:
+            yrange.reverse()
+        y = yrange[0]
+        for x in xrange:
+            if worldmap.tiles[x][y].solid:
+                return False
+            while line.getx(y) < x:
+                y += 1
+                if worldmap.tiles[x][y].solid:
+                    return False
+        return True     
 
     def getcollisions(self, entitylist):
         return [entity for entity in entitylist if self.iscollision(entity)]
