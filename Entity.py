@@ -108,6 +108,18 @@ class Entity:
                     ymovement = 0
             else:
                 ymovement = 0
+        self.speedx = xmovement
+        self.speedy = ymovement
+        self.setspeed(self.tempmaxspeed)
+        xmovement = self.speedx/FPS * BLOCKPIXELS/BLOCKFEET
+        ymovement = self.speedy/FPS * BLOCKPIXELS/BLOCKFEET
+        if any(tile.solid for tile in self.gettilecollisions(worldmap, xmovement, ymovement)):
+            if any(tile.solid for tile in self.gettilecollisions(worldmap, xmovement, 0)):
+                xmovement = 0
+                if any(tile.solid for tile in self.gettilecollisions(worldmap, 0, ymovement)):
+                    ymovement = 0
+            else:
+                ymovement = 0
         self.x += xmovement
         self.y += ymovement
 
