@@ -70,6 +70,10 @@ class Entity:
     def getcollisions(self, entitylist):
         return [entity for entity in entitylist if self.iscollision(entity)]
 
+    def getdist(self, x, y):
+        selfx, selfy = self.getcenter()
+        return ((selfx-x)**2+(selfy-y)**2)**0.5
+
     def gettilecollisions(self, worldmap, offx=0, offy=0):
         collisions = []
         for i in range(int(self.x+offx)//BLOCKPIXELS, int(self.x+self.sizex-1+offx)//BLOCKPIXELS+1):
