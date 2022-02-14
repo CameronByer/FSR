@@ -67,9 +67,6 @@ class Rat(Entity):
                 return True
         return False
 
-    def distancetopoint(self, x, y):
-        return ((self.x-x)**2+(self.y-y)**2)**0.5
-
     def draw(self, camerax, cameray):
         Entity.draw(self, screen, camerax, cameray)
         self.drawhealthbar(WIDTH-110, HEIGHT-30)
