@@ -164,7 +164,6 @@ class Map:
             self.connectnodes(a, cornernode, radius, water_radius)
             self.connectnodes(cornernode, b, radius, water_radius)
             
-
     def draw(self, camerax, cameray):
         for x in range(self.sizex):
             for y in range(self.sizey):

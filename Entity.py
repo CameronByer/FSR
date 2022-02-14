@@ -30,19 +30,19 @@ class Entity:
             return False
         return True
 
-    def isvisible(self, other, worldmap):
+    def isvisible(self, otherx, othery, worldmap):
+        if otherx < 0 or otherx >= worldmap.sizex * BLOCKPIXELS or othery < 0 or othery >= worldmap.sizey*BLOCKPIXELS:
+            return False
         selfx, selfy = self.getcenter()
-        otherx, othery = other.getcenter()
-        line = Tools.Line((self.x, self.y), (other.x, other.y))
-        sightline = []
-        xrange = list(range(math.ceil(min(self.x, other.x)/BLOCKPIXELS), math.ceil(max(self.x, other.x)/BLOCKPIXELS)))
-        yrange = list(range(math.ceil(min(self.y, other.y)/BLOCKPIXELS), math.ceil(max(self.y, other.y)/BLOCKPIXELS)))
-        if self.x <= other.x:
-            x = int(self.x//BLOCKPIXELS)
-            y = int(self.y//BLOCKPIXELS)
+        line = Tools.Line((selfx, selfy), (otherx, othery))
+        xrange = list(range(math.ceil(min(selfx, otherx)/BLOCKPIXELS), math.ceil(max(selfx, otherx)/BLOCKPIXELS)))
+        yrange = list(range(math.ceil(min(selfy, othery)/BLOCKPIXELS), math.ceil(max(selfy, othery)/BLOCKPIXELS)))
+        if selfx <= otherx:
+            x = int(selfx//BLOCKPIXELS)
+            y = int(selfy//BLOCKPIXELS)
         else:
-            x = int(other.x//BLOCKPIXELS)
-            y = int(other.y//BLOCKPIXELS)
+            x = int(otherx//BLOCKPIXELS)
+            y = int(othery//BLOCKPIXELS)
         if line.slope == None:
             return not any(worldmap.tiles[x][y] for y in yrange)
         if line.slope < 0:
