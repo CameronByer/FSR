@@ -16,9 +16,10 @@ class SewerOoze(Enemy):
     def __init__(self, x, y):
         Enemy.__init__(self, "Sewer Ooze", x, y, 24, 24, 7)
     def update(self, worldmap, rat):
-        if self.isvisible(rat, worldmap):
-            self.targetx = rat.x
-            self.targety = rat.y
+        ratx, raty = rat.getcenter()
+        if self.isvisible(ratx, raty, worldmap):
+            self.targetx = ratx
+            self.targety = raty
         speed = self.getspeed()
         self.speedx = self.targetx - self.x
         self.speedy = self.targety - self.y
@@ -32,9 +33,10 @@ class RedOoze(Enemy):
     def __init__(self, x, y):
         Enemy.__init__(self, "Red Ooze", x, y, 24, 24, 10)
     def update(self, worldmap, rat):
-        if self.isvisible(rat, worldmap):
-            self.targetx = rat.x
-            self.targety = rat.y
+        ratx, raty = rat.getcenter()
+        if self.isvisible(ratx, raty, worldmap):
+            self.targetx = ratx
+            self.targety = raty
         speed = self.getspeed()
         self.speedx = self.targetx - self.x
         self.speedy = self.targety - self.y
