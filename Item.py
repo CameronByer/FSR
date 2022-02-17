@@ -22,23 +22,18 @@ class WorldItem(Entity):
     def pickup(self):
         return ITEM_LIST[self.style]()
 
-
 class Apple(Item):
     def __init__(self):
         Item.__init__(self, "Apple")
     def use(self, player):
-        if self.style == "Apple":
-            player.heal(25)
-            return True
-        return False
+        player.heal(25)
+        return True
 class Banana(Item):
     def __init__(self):
         Item.__init__(self, "Banana")
     def use(self, player):
-        if self.style == "Banana":
-            player.heal(50)
-            return False
-        return False
+        player.heal(50)
+        return True
 
 ITEM_LIST = {"Apple":Apple, "Banana":Banana}
 ITEM_BANK = {item : pygame.image.load("Items\\"+item+".png").convert_alpha() for item in ITEM_LIST}
